@@ -37,10 +37,14 @@ class Post extends CActiveRecord
 		return array(
 			array('title, content, status, create_time, author_id', 'required'),
 			array('status, author_id', 'numerical', 'integerOnly'=>true),
-			array('title', 'length', 'max'=>50),
+                        array('status','in','range' => array(1,2,3) ),
+      			array('title', 'length', 'max'=>50),
 			array('content', 'length', 'max'=>400),
 			array('tags', 'length', 'max'=>20),
 			array('update_time', 'safe'),
+                        array('tags','match','pattern'=>'/^[\w\s,]+$/',
+                             'message'=>'Tags can only contain word characters.'),
+                        array('tags','normalizeTags'),
 			// The following rule is used by search().
 			// @todo Please remove those attributes that should not be searched.
 			array('id, title, content, status, tags, create_time, update_time, author_id', 'safe', 'on'=>'search'),
@@ -119,4 +123,10 @@ class Post extends CActiveRecord
 	{
 		return parent::model($className);
 	}
+        
+        public function normalizeTags($attribute,$params)
+        {
+              $this->tags=Tag::array2string(array_unique(Tag::string2array($this->tags)));
+             
+        }
 }

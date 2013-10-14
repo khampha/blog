@@ -86,6 +86,12 @@ class User extends CActiveRecord
 			'criteria'=>$criteria,
 		));
 	}
+        
+        public function beforeSave(){
+            
+        }
+        
+         
 
 	/**
 	 * Returns the static model of the specified AR class.
@@ -99,9 +105,12 @@ class User extends CActiveRecord
 	}
         
         public function validatePassword($password){
+            /*
             if ($password==$this->password) return TRUE;
             else return FALSE;
-            //return CPasswordHelper::verifyPassword($password,$this->password);
+             * */
+             
+            return CPasswordHelper::verifyPassword($password,$this->password);
         }
         
         public function hashPassword($password){

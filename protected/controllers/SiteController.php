@@ -5,6 +5,7 @@ class SiteController extends Controller
 	/**
 	 * Declares class-based actions.
 	 */
+       
 	public function actions()
 	{
 		return array(
@@ -45,7 +46,35 @@ class SiteController extends Controller
 				$this->render('error', $error);
 		}
 	}
-
+        
+        public function actionRegister(){
+          
+            $model = new RegisterForm;  
+            if(isset($_POST["RegisterForm"])){
+                $model->attributes=$_POST['RegisterForm'];
+                if($model->validate()){
+                    $user = new User;
+                    
+                    $user->username="duc";//$model->username;
+                    $user->email="asdasda";//$model->email;
+                    $user->password="sdas";//$user->hashPassword($model->password);
+                    //print ($user->hashPassword($model->password));
+                    if($user->save()){
+                          $this->redirect(array('site/afterRegister'));
+                  
+                    }
+                }
+            }
+            
+            $this->render('register',array('model'=>$model));
+        }  
+        
+        public function actionAfterRegister(){
+            
+            
+            $this->render('afterRegister');
+            
+        }
 	/**
 	 * Displays the contact page
 	 */
@@ -78,7 +107,7 @@ class SiteController extends Controller
 	public function actionLogin()
 	{
 		$model=new LoginForm;
-
+                
 		// if it is ajax validation request
 		if(isset($_POST['ajax']) && $_POST['ajax']==='login-form')
 		{

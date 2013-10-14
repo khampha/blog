@@ -58,11 +58,7 @@ class CommentBase extends CActiveRecord
 		return array(
                         'author'=> aray(self::BELONGS_TO,'User','author_id'),
 			
-                        'comments'=>array(self::HAS_MANY,'Comment','post_id',
-                            'condition'=>'comments.status='.Comment::STATUS_APPROVED,
-                            'order'=>'comments.create_time DESC'),
-                        'commentCount'=>array(self::STAT,'Comment','post_id',
-                            'condition'=>'status'.Comment::STATUS_APPROVED)  
+                       
 		);
 	}
 

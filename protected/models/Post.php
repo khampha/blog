@@ -30,6 +30,21 @@ class Post extends CActiveRecord {
         return 'tbl_post';
     }
 
+    public function accessRules() {
+        return array(
+            array('allow',
+                'actions' => array('view', 'index'),
+                'users' => '*'
+            ),
+            array('allow',
+                'users' => '@'
+            ),
+            array('deny',
+                'users' => '*'
+            )
+        );
+    }
+
     /**
      * @return array validation rules for model attributes.
      */
@@ -54,15 +69,17 @@ class Post extends CActiveRecord {
     /**
      * @return array relational rules.
      */
-    public function relations() {
-        // NOTE: you may need to adjust the relation name and the related
-        // class name for the relations automatically generated below.
-        return array(
-            'comments' => array(self::HAS_MANY, 'Comment', 'post_id'),
-            'author' => array(self::BELONGS_TO, 'User', 'author_id'),
-        );
-    }
-
+public function relations()
+{
+    return array(
+        'author' => array(self::BELONGS_TO, 'User', 'author_id'),
+        'comments' => array(self::HAS_MANY, 'Comment', 'post_id',
+            'condition'=>'comments.status='.Comment::STATUS_APPROVED,
+            'order'=>'comments.create_time DESC'),
+        'commentCount' => array(self::STAT, 'Comment', 'post_id',
+            'condition'=>'status='.Comment::STATUS_APPROVED),
+    );
+}
     /**
      * @return array customized attribute labels (name=>label)
      */
@@ -134,12 +151,29 @@ class Post extends CActiveRecord {
     protected function beforeSave() {
         if (parent::beforeSave()) {
             if ($this->isNewRecord) {
+                $this->create_time = $this->update_time = time();
                 $this->author_id = Yii::app()->user->id;
+            } else {
+                $this->update_time = time();
             }
             return true;
         }
         else
             return false;
+    }
+
+    
+
+    private $_oldTags;
+
+    protected function afterSafe() {
+        parent::afterSave();
+        Tag::model()->updateFrequency($this->_oldTags, $this->tags);
+    }
+
+    protected function afterFind() {
+        parent::afterFind();
+        $this->_oldTags = $this->tags;
     }
 
 }

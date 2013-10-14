@@ -7,98 +7,125 @@
  * @property string $tag_name
  * @property integer $frequency
  */
-class Tag extends CActiveRecord
-{
-	/**
-	 * @return string the associated database table name
-	 */
-	public function tableName()
-	{
-		return 'tbl_tag';
-	}
+class Tag extends CActiveRecord {
 
-	/**
-	 * @return array validation rules for model attributes.
-	 */
-	public function rules()
-	{
-		// NOTE: you should only define rules for those attributes that
-		// will receive user inputs.
-		return array(
-			array('tag_name, frequency', 'required'),
-			array('frequency', 'numerical', 'integerOnly'=>true),
-			array('tag_name', 'length', 'max'=>30),
-			// The following rule is used by search().
-			// @todo Please remove those attributes that should not be searched.
-			array('tag_name, frequency', 'safe', 'on'=>'search'),
-		);
-	}
+    /**
+     * @return string the associated database table name
+     */
+    public function tableName() {
+        return 'tbl_tag';
+    }
 
-	/**
-	 * @return array relational rules.
-	 */
-	public function relations()
-	{
-		// NOTE: you may need to adjust the relation name and the related
-		// class name for the relations automatically generated below.
-		return array(
-		);
-	}
+    /**
+     * @return array validation rules for model attributes.
+     */
+    public function rules() {
+        // NOTE: you should only define rules for those attributes that
+        // will receive user inputs.
+        return array(
+            array('tag_name, frequency', 'required'),
+            array('frequency', 'numerical', 'integerOnly' => true),
+            array('tag_name', 'length', 'max' => 30),
+            // The following rule is used by search().
+            // @todo Please remove those attributes that should not be searched.
+            array('tag_name, frequency', 'safe', 'on' => 'search'),
+        );
+    }
 
-	/**
-	 * @return array customized attribute labels (name=>label)
-	 */
-	public function attributeLabels()
-	{
-		return array(
-			'tag_name' => 'Tag Name',
-			'frequency' => 'Frequency',
-		);
-	}
+    /**
+     * @return array relational rules.
+     */
+    public function relations() {
+        // NOTE: you may need to adjust the relation name and the related
+        // class name for the relations automatically generated below.
+        return array(
+        );
+    }
 
-	/**
-	 * Retrieves a list of models based on the current search/filter conditions.
-	 *
-	 * Typical usecase:
-	 * - Initialize the model fields with values from filter form.
-	 * - Execute this method to get CActiveDataProvider instance which will filter
-	 * models according to data in model fields.
-	 * - Pass data provider to CGridView, CListView or any similar widget.
-	 *
-	 * @return CActiveDataProvider the data provider that can return the models
-	 * based on the search/filter conditions.
-	 */
-	public function search()
-	{
-		// @todo Please modify the following code to remove attributes that should not be searched.
+    /**
+     * @return array customized attribute labels (name=>label)
+     */
+    public function attributeLabels() {
+        return array(
+            'tag_name' => 'Tag Name',
+            'frequency' => 'Frequency',
+        );
+    }
 
-		$criteria=new CDbCriteria;
+    /**
+     * Retrieves a list of models based on the current search/filter conditions.
+     *
+     * Typical usecase:
+     * - Initialize the model fields with values from filter form.
+     * - Execute this method to get CActiveDataProvider instance which will filter
+     * models according to data in model fields.
+     * - Pass data provider to CGridView, CListView or any similar widget.
+     *
+     * @return CActiveDataProvider the data provider that can return the models
+     * based on the search/filter conditions.
+     */
+    public function search() {
+        // @todo Please modify the following code to remove attributes that should not be searched.
 
-		$criteria->compare('tag_name',$this->tag_name,true);
-		$criteria->compare('frequency',$this->frequency);
+        $criteria = new CDbCriteria;
 
-		return new CActiveDataProvider($this, array(
-			'criteria'=>$criteria,
-		));
-	}
+        $criteria->compare('tag_name', $this->tag_name, true);
+        $criteria->compare('frequency', $this->frequency);
 
-	/**
-	 * Returns the static model of the specified AR class.
-	 * Please note that you should have this exact method in all your CActiveRecord descendants!
-	 * @param string $className active record class name.
-	 * @return Tag the static model class
-	 */
-	public static function model($className=__CLASS__)
-	{
-		return parent::model($className);
-	}
-        
-        public static function array2string($tags){
-            return implode(', ', $tags);
+        return new CActiveDataProvider($this, array(
+            'criteria' => $criteria,
+        ));
+    }
+
+    /**
+     * Returns the static model of the specified AR class.
+     * Please note that you should have this exact method in all your CActiveRecord descendants!
+     * @param string $className active record class name.
+     * @return Tag the static model class
+     */
+    public static function model($className = __CLASS__) {
+        return parent::model($className);
+    }
+    
+   
+
+    public static function array2string($tags) {
+        return implode(', ', $tags);
+    }
+
+    public static function string2array($tags) {
+
+        return preg_split('/\s*,\s*/', trim($tags), -1, PREG_SPLIT_NO_EMPTY);
+    }
+
+    public function updateFrequency($oldTags,$newTags){
+        $oldTags= self::string2array($oldTags);
+        $newTags= self::string2array($newTags);
+        $this->addTags(array_values(array_diff($newTags,$oldTags)));
+        $this->removeTags(array_values(array_diff($oldTags, $newTags)));
+    }
+    
+    public function addTags($tags) {
+        $criteria = new CDbCriteria;
+        $criteria->addInCondition('name', $tags);
+        $this->updateCounters(array('frequency' => 1), $criteria);
+        foreach ($tags as $name) {
+            if (!$this->exists('name=:name', array(':name' => $name))) {
+                $tag = new Tag;
+                $tag->name = $name;
+                $tag->frequency = 1;
+                $tag->save();
+            }
         }
-        
-        public static function string2array($tags){
-            
-            return preg_split('/\s*,\s*/', trim($tags), -1, PREG_SPLIT_NO_EMPTY);
-        }
+    }
+
+    public function removeTags($tags) {
+        if (empty($tags))
+            return;
+        $criteria = new CDbCriteria;
+        $criteria->addInCondition('name', $tags);
+        $this->updateCounters(array('frequency' => -1), $criteria);
+        $this->deleteAll('frequency<=0');
+    }
+
 }
